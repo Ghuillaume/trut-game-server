@@ -65,10 +65,6 @@ public class JoinGameService implements JoinGameUseCase {
             state.fortialActive(), state.winner(), state.rematchVotes()
         );
 
-        if (updatedPlayers.size() == 4) {
-            updatedState = engine.startNewRound(updatedState);
-        }
-
         repository.save(updatedState);
         publishViewsToAll(updatedState);
 

@@ -80,10 +80,6 @@ public class AddAiPlayerService implements AddAiPlayerUseCase {
             state.fortialActive(), state.winner(), state.rematchVotes()
         );
 
-        if (updatedPlayers.size() == 4) {
-            updatedState = engine.startNewRound(updatedState);
-        }
-
         repository.save(updatedState);
         publishViewsToAll(updatedState);
     }

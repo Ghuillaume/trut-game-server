@@ -19,7 +19,8 @@ public record GameView(
     boolean fortial,
     String winner,
     List<String> rematchVotes,
-    List<String> disconnectedPlayers
+    List<String> disconnectedPlayers,
+    String creatorId
 ) {
     public record PlayerView(String id, String pseudo, String team, int cardCount, boolean isAi) {}
     public record TrickEntryView(String playerId, String card) {}

@@ -174,6 +174,6 @@ class ApplyActionServiceTest {
     private GameView dummyView() {
         return new GameView(GAME_ID, "PLAYING_TRICK", List.of(), "TEAM_A",
             null, List.of(), List.of(), List.of(), null, Map.of(), List.of(), 1, false, null,
-            List.of(), List.of());
+            List.of(), List.of(), "p1");
     }
 }

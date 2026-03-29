@@ -88,7 +88,7 @@ class GameWebSocketIntegrationTest {
     }
 
     /**
-     * Creates a full 4-player game and returns [gameId, p1Id, p2Id, p3Id, p4Id].
+     * Creates a full 4-player game, starts it, and returns [gameId, p1Id, p2Id, p3Id, p4Id].
      */
     private String[] createFullGame() {
         Map<String, Object> create = createGame("Alice");
@@ -97,7 +97,15 @@ class GameWebSocketIntegrationTest {
         String p2 = (String) joinGame(gameId, "Bob").get("playerId");
         String p3 = (String) joinGame(gameId, "Charlie").get("playerId");
         String p4 = (String) joinGame(gameId, "Diana").get("playerId");
+        // Creator explicitly starts the game
+        startGame(gameId, p1);
         return new String[]{gameId, p1, p2, p3, p4};
+    }
+
+    private void startGame(String gameId, String requestingPlayerId) {
+        restTemplate.postForEntity(
+                "/api/games/" + gameId + "/start",
+                Map.of("requestingPlayerId", requestingPlayerId), Map.class);
     }
 
     /**

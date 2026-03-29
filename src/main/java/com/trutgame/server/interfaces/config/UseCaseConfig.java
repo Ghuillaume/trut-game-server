@@ -5,6 +5,7 @@ import com.trutgame.server.application.port.in.ApplyActionUseCase;
 import com.trutgame.server.application.port.in.CreateGameUseCase;
 import com.trutgame.server.application.port.in.GetGameViewUseCase;
 import com.trutgame.server.application.port.in.JoinGameUseCase;
+import com.trutgame.server.application.port.in.StartGameUseCase;
 import com.trutgame.server.application.port.in.SwapTeamUseCase;
 import com.trutgame.server.application.port.out.GameSessionRepository;
 import com.trutgame.server.application.port.out.GameViewPublisher;
@@ -86,5 +87,13 @@ public class UseCaseConfig {
                                            GameViewPublisher publisher,
                                            GameViewBuilder viewBuilder) {
         return new SwapTeamService(repository, publisher, viewBuilder);
+    }
+
+    @Bean
+    public StartGameUseCase startGameUseCase(GameSessionRepository repository,
+                                             GameViewPublisher publisher,
+                                             TrutGameEngine engine,
+                                             GameViewBuilder viewBuilder) {
+        return new StartGameService(repository, publisher, engine, viewBuilder);
     }
 }

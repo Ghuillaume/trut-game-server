@@ -5,6 +5,7 @@ import com.trutgame.server.application.port.in.AddAiPlayerUseCase;
 import com.trutgame.server.application.port.in.CreateGameUseCase;
 import com.trutgame.server.application.port.in.GetGameViewUseCase;
 import com.trutgame.server.application.port.in.JoinGameUseCase;
+import com.trutgame.server.application.port.in.StartGameUseCase;
 import com.trutgame.server.application.port.in.SwapTeamUseCase;
 import com.trutgame.server.domain.model.PlayerId;
 import jakarta.validation.Valid;
@@ -25,17 +26,20 @@ public class GameController {
     private final GetGameViewUseCase getGameViewUseCase;
     private final AddAiPlayerUseCase addAiPlayerUseCase;
     private final SwapTeamUseCase swapTeamUseCase;
+    private final StartGameUseCase startGameUseCase;
 
     public GameController(CreateGameUseCase createGameUseCase,
                          JoinGameUseCase joinGameUseCase,
                          GetGameViewUseCase getGameViewUseCase,
                          AddAiPlayerUseCase addAiPlayerUseCase,
-                         SwapTeamUseCase swapTeamUseCase) {
+                         SwapTeamUseCase swapTeamUseCase,
+                         StartGameUseCase startGameUseCase) {
         this.createGameUseCase = createGameUseCase;
         this.joinGameUseCase = joinGameUseCase;
         this.getGameViewUseCase = getGameViewUseCase;
         this.addAiPlayerUseCase = addAiPlayerUseCase;
         this.swapTeamUseCase = swapTeamUseCase;
+        this.startGameUseCase = startGameUseCase;
     }
 
     @PostMapping
@@ -80,6 +84,15 @@ public class GameController {
         return ResponseEntity.ok(Map.of("status", "Team swapped"));
     }
 
+    @PostMapping("/{gameId}/start")
+    public ResponseEntity<Map<String, String>> startGame(
+            @PathVariable String gameId,
+            @Valid @RequestBody StartGameRequest request) {
+        startGameUseCase.startGame(
+            new StartGameCommand(gameId, request.requestingPlayerId()));
+        return ResponseEntity.ok(Map.of("status", "Game started"));
+    }
+
     public record CreateGameRequest(
         @NotBlank(message = "Le pseudo est obligatoire")
         @Size(min = 1, max = 20, message = "Le pseudo doit faire entre 1 et 20 caractères")
@@ -102,5 +115,10 @@ public class GameController {
         String requestingPlayerId,
         @NotBlank(message = "Le targetPlayerId est obligatoire")
         String targetPlayerId
+    ) {}
+
+    public record StartGameRequest(
+        @NotBlank(message = "Le requestingPlayerId est obligatoire")
+        String requestingPlayerId
     ) {}
 }
