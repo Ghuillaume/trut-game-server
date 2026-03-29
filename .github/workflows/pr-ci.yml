@@ -3,19 +3,14 @@ name: Backend CI
 on:
   push:
     branches: [main]
-    paths: [game-server/**]
   pull_request:
     types: [opened, synchronize, reopened]
-    paths: [game-server/**]
 
 jobs:
   build:
     name: Build & Test
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: game-server
 
     steps:
       - name: Checkout code
@@ -31,7 +26,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('game-server/pom.xml') }}
+          key: ${{ runner.os }}-maven-${{ hashFiles('pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
 
