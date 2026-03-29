@@ -28,6 +28,73 @@ class TrutGameEngineTest {
     private static final Player PLAYER_4 = new Player(P4, "Diana", Team.TEAM_B, 3, false);
     private static final List<Player> ALL_PLAYERS = List.of(PLAYER_1, PLAYER_2, PLAYER_3, PLAYER_4);
 
+    // ── Seating order tests ─────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("ensureAlternatingTeams")
+    class EnsureAlternatingTeams {
+
+        @Test
+        @DisplayName("should keep already alternating order unchanged")
+        void shouldKeepAlreadyAlternating() {
+            // A, B, A, B → no change
+            var result = TrutGameEngine.ensureAlternatingTeams(ALL_PLAYERS);
+            then(result).hasSize(4);
+            then(result.get(0).team()).isEqualTo(Team.TEAM_A);
+            then(result.get(1).team()).isEqualTo(Team.TEAM_B);
+            then(result.get(2).team()).isEqualTo(Team.TEAM_A);
+            then(result.get(3).team()).isEqualTo(Team.TEAM_B);
+        }
+
+        @Test
+        @DisplayName("should reorder when same team sits together")
+        void shouldReorderWhenSameTeamTogether() {
+            // A, A, B, B → should become A, B, A, B
+            var badOrder = List.of(
+                new Player(P1, "Alice", Team.TEAM_A, 0, false),
+                new Player(P3, "Charlie", Team.TEAM_A, 1, false),
+                new Player(P2, "Bob", Team.TEAM_B, 2, false),
+                new Player(P4, "Diana", Team.TEAM_B, 3, false)
+            );
+            var result = TrutGameEngine.ensureAlternatingTeams(badOrder);
+            then(result.get(0).team()).isEqualTo(Team.TEAM_A);
+            then(result.get(1).team()).isEqualTo(Team.TEAM_B);
+            then(result.get(2).team()).isEqualTo(Team.TEAM_A);
+            then(result.get(3).team()).isEqualTo(Team.TEAM_B);
+        }
+
+        @Test
+        @DisplayName("should preserve player identity when reordering")
+        void shouldPreservePlayerIdentity() {
+            var badOrder = List.of(
+                new Player(P1, "Alice", Team.TEAM_A, 0, false),
+                new Player(P3, "Charlie", Team.TEAM_A, 1, false),
+                new Player(P2, "Bob", Team.TEAM_B, 2, false),
+                new Player(P4, "Diana", Team.TEAM_B, 3, false)
+            );
+            var result = TrutGameEngine.ensureAlternatingTeams(badOrder);
+            then(result.get(0).pseudo()).isEqualTo("Alice");
+            then(result.get(1).pseudo()).isEqualTo("Bob");
+            then(result.get(2).pseudo()).isEqualTo("Charlie");
+            then(result.get(3).pseudo()).isEqualTo("Diana");
+        }
+
+        @Test
+        @DisplayName("should update seatIndex after reordering")
+        void shouldUpdateSeatIndex() {
+            var badOrder = List.of(
+                new Player(P1, "Alice", Team.TEAM_A, 0, false),
+                new Player(P3, "Charlie", Team.TEAM_A, 1, false),
+                new Player(P2, "Bob", Team.TEAM_B, 2, false),
+                new Player(P4, "Diana", Team.TEAM_B, 3, false)
+            );
+            var result = TrutGameEngine.ensureAlternatingTeams(badOrder);
+            for (int i = 0; i < result.size(); i++) {
+                then(result.get(i).seatIndex()).isEqualTo(i);
+            }
+        }
+    }
+
     private static final Card SEVEN_H = new Card(CardValue.SEVEN, Suit.HEARTS);
     private static final Card SEVEN_D = new Card(CardValue.SEVEN, Suit.DIAMONDS);
     private static final Card EIGHT_H = new Card(CardValue.EIGHT, Suit.HEARTS);

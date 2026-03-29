@@ -113,19 +113,25 @@ public class TrutGameEngine {
     public GameState startNewRound(GameState state) {
         int newRoundNumber = state.roundNumber() + 1;
 
+        // On the very first round, ensure players alternate teams around the table (A-B-A-B)
+        List<Player> players = state.players();
+        if (state.phase() == GamePhase.WAITING_FOR_PLAYERS || state.roundNumber() == 0) {
+            players = ensureAlternatingTeams(players);
+        }
+
         // Rotate dealer — keep the same for the very first round
         PlayerId dealerId;
         if (state.currentDealerId() == null) {
-            dealerId = state.players().get(0).id();
+            dealerId = players.get(0).id();
         } else if (state.roundNumber() == 0) {
             dealerId = state.currentDealerId();
         } else {
-            dealerId = nextPlayerFrom(state.players(), state.currentDealerId());
+            dealerId = nextPlayerFrom(players, state.currentDealerId());
         }
 
         // Build deal order: clockwise starting from left of new dealer
-        PlayerId leftOfDealer = nextPlayerFrom(state.players(), dealerId);
-        List<PlayerId> dealOrder = buildClockwiseOrder(state.players(), leftOfDealer);
+        PlayerId leftOfDealer = nextPlayerFrom(players, dealerId);
+        List<PlayerId> dealOrder = buildClockwiseOrder(players, leftOfDealer);
 
         // Shuffle and deal one card at a time, 3 rounds
         List<Card> deck = buildDeck();
@@ -168,7 +174,7 @@ public class TrutGameEngine {
             Team fortialTeam = fortialA ? Team.TEAM_A : Team.TEAM_B;
             phase = GamePhase.FORTIAL_DECISION;
             firstPlayer = firstPlayerOfTeamClockwise(
-                    state.players(), dealerId, fortialTeam);
+                    players, dealerId, fortialTeam);
             fortialActive = true;
         } else {
             phase = GamePhase.PLAYING_TRICK;
@@ -177,7 +183,7 @@ public class TrutGameEngine {
         }
 
         return new GameState(
-                state.gameId(), phase, state.players(), dealerId,
+                state.gameId(), phase, players, dealerId,
                 firstPlayer, hands, talon, List.of(),
                 Trick.empty(), null, score, newRoundNumber,
                 fortialActive, null, Set.of()
@@ -752,6 +758,46 @@ public class TrutGameEngine {
     private boolean isBothFortial(Map<Team, TokenCount> score) {
         return score.get(Team.TEAM_A).isFortial()
                 && score.get(Team.TEAM_B).isFortial();
+    }
+
+    // ── Seating order ─────────────────────────────────────────────────────
+
+    /**
+     * Reorder players so that teams alternate around the table: A-B-A-B.
+     * Preserves the relative order within each team. Updates seatIndex accordingly.
+     */
+    static List<Player> ensureAlternatingTeams(List<Player> players) {
+        if (players.size() != PLAYER_COUNT) return players;
+
+        // Check if already alternating
+        boolean alreadyAlternating = true;
+        for (int i = 1; i < players.size(); i++) {
+            if (players.get(i).team() == players.get(i - 1).team()) {
+                alreadyAlternating = false;
+                break;
+            }
+        }
+        if (alreadyAlternating) return players;
+
+        // Split by team, preserving relative order
+        List<Player> teamA = new ArrayList<>();
+        List<Player> teamB = new ArrayList<>();
+        for (Player p : players) {
+            if (p.team() == Team.TEAM_A) teamA.add(p);
+            else teamB.add(p);
+        }
+
+        // Interleave: A0, B0, A1, B1
+        List<Player> reordered = new ArrayList<>(PLAYER_COUNT);
+        for (int i = 0; i < Math.min(teamA.size(), teamB.size()); i++) {
+            reordered.add(withSeatIndex(teamA.get(i), reordered.size()));
+            reordered.add(withSeatIndex(teamB.get(i), reordered.size()));
+        }
+        return List.copyOf(reordered);
+    }
+
+    private static Player withSeatIndex(Player p, int newSeatIndex) {
+        return new Player(p.id(), p.pseudo(), p.team(), newSeatIndex, p.isAi());
     }
 
     // ── Player-list navigation ──────────────────────────────────────────────
