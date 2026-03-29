@@ -50,7 +50,7 @@ class GetGameViewServiceTest {
         GameView expectedView = new GameView(
             GAME_ID, "WAITING_FOR_PLAYERS", List.of(), "TEAM_A",
             null, List.of(), List.of(), List.of(), null, Map.of(), List.of(), 0, false, null,
-            List.of(), List.of());
+            List.of(), List.of(), null);
         given(repository.findById(GAME_ID)).willReturn(Optional.of(state));
         given(viewBuilder.buildView(state, PLAYER_ID)).willReturn(expectedView);
 

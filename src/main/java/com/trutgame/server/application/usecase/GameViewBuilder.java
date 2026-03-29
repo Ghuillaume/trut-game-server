@@ -88,6 +88,13 @@ public class GameViewBuilder {
             .map(PlayerId::value)
             .toList();
 
+        // Creator is the player at seat 0
+        String creatorId = state.players().stream()
+            .filter(p -> p.seatIndex() == 0)
+            .map(p -> p.id().value())
+            .findFirst()
+            .orElse(null);
+
         return new GameView(
             state.gameId(),
             state.phase().name(),
@@ -104,7 +111,8 @@ public class GameViewBuilder {
             state.fortialActive(),
             state.winner() != null ? state.winner().name() : null,
             rematchVoteIds,
-            List.of()
+            List.of(),
+            creatorId
         );
     }
 }

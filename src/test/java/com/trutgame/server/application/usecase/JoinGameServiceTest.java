@@ -161,7 +161,6 @@ class JoinGameServiceTest {
         );
         GameState stateWith3 = createWaitingState(threePlayers);
         given(repository.findById(GAME_ID)).willReturn(Optional.of(stateWith3));
-        given(engine.startNewRound(any(GameState.class))).willAnswer(inv -> inv.getArgument(0));
 
         // When — seat 3 joins (4th player)
         JoinGameResult result3 = service.joinGame(new JoinGameCommand(GAME_ID, "Diana"));
@@ -171,8 +170,8 @@ class JoinGameServiceTest {
     }
 
     @Test
-    @DisplayName("should start game when fourth player joins and publish views to all")
-    void shouldStartGameWhenFourthPlayerJoins() {
+    @DisplayName("should not auto-start game when fourth player joins")
+    void shouldNotAutoStartGameWhenFourthPlayerJoins() {
         // Given — 3 players already present
         List<Player> threePlayers = List.of(
             new Player(new PlayerId("p1"), "Alice", Team.TEAM_A, 0, false),
@@ -181,15 +180,15 @@ class JoinGameServiceTest {
         );
         GameState waitingState = createWaitingState(threePlayers);
         given(repository.findById(GAME_ID)).willReturn(Optional.of(waitingState));
-        given(engine.startNewRound(any(GameState.class))).willAnswer(inv -> inv.getArgument(0));
         given(viewBuilder.buildView(any(GameState.class), any(PlayerId.class)))
             .willReturn(dummyView());
 
         // When
         service.joinGame(new JoinGameCommand(GAME_ID, "Diana"));
 
-        // Then
-        verify(engine).startNewRound(any(GameState.class));
+        // Then — game should NOT auto-start; engine.startNewRound() should NOT be called
+        verify(engine, never()).startNewRound(any(GameState.class));
+        // But views should still be published to all 4 players
         verify(publisher, times(4)).publishGameView(
             eq(GAME_ID), any(PlayerId.class), any(GameView.class));
     }
@@ -221,6 +220,6 @@ class JoinGameServiceTest {
     private GameView dummyView() {
         return new GameView(GAME_ID, "WAITING_FOR_PLAYERS", List.of(), "TEAM_A",
             null, List.of(), List.of(), List.of(), null, Map.of(), List.of(), 0, false, null,
-            List.of(), List.of());
+            List.of(), List.of(), "host-id");
     }
 }

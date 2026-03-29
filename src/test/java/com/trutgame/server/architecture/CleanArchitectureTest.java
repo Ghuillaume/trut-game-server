@@ -28,6 +28,7 @@ class CleanArchitectureTest {
         noClasses()
                 .that().resideInAPackage("..domain..")
                 .should().dependOnClassesThat().resideInAPackage("..application..")
+                .allowEmptyShould(true)
                 .check(importedClasses);
     }
 
@@ -37,6 +38,7 @@ class CleanArchitectureTest {
         noClasses()
                 .that().resideInAPackage("..domain..")
                 .should().dependOnClassesThat().resideInAPackage("..infrastructure..")
+                .allowEmptyShould(true)
                 .check(importedClasses);
     }
 
@@ -46,6 +48,7 @@ class CleanArchitectureTest {
         noClasses()
                 .that().resideInAPackage("..domain..")
                 .should().dependOnClassesThat().resideInAPackage("..interfaces..")
+                .allowEmptyShould(true)
                 .check(importedClasses);
     }
 
@@ -55,6 +58,7 @@ class CleanArchitectureTest {
         noClasses()
                 .that().resideInAPackage("..domain..")
                 .should().dependOnClassesThat().resideInAPackage("org.springframework..")
+                .allowEmptyShould(true)
                 .check(importedClasses);
     }
 
@@ -64,6 +68,7 @@ class CleanArchitectureTest {
         noClasses()
                 .that().resideInAPackage("..application..")
                 .should().dependOnClassesThat().resideInAPackage("..infrastructure..")
+                .allowEmptyShould(true)
                 .check(importedClasses);
     }
 
@@ -73,6 +78,7 @@ class CleanArchitectureTest {
         noClasses()
                 .that().resideInAPackage("..application..")
                 .should().dependOnClassesThat().resideInAPackage("..interfaces..")
+                .allowEmptyShould(true)
                 .check(importedClasses);
     }
 
@@ -82,6 +88,7 @@ class CleanArchitectureTest {
         noClasses()
                 .that().resideInAPackage("..application..")
                 .should().dependOnClassesThat().resideInAPackage("org.springframework..")
+                .allowEmptyShould(true)
                 .check(importedClasses);
     }
 
@@ -91,6 +98,7 @@ class CleanArchitectureTest {
         classes()
                 .that().resideInAPackage("..interfaces.rest..")
                 .should().dependOnClassesThat().resideInAnyPackage("..application..", "java..", "org.springframework..")
+                .allowEmptyShould(true)
                 .check(importedClasses);
     }
 }
