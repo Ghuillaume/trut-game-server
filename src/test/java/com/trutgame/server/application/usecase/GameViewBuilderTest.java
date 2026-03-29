@@ -15,6 +15,7 @@ import com.trutgame.server.domain.model.TokenCount;
 import com.trutgame.server.domain.model.Trick;
 import com.trutgame.server.domain.model.TrutChallenge;
 import com.trutgame.server.domain.phase.GamePhase;
+import com.trutgame.server.application.port.out.PlayerConnectionPort;
 import com.trutgame.server.domain.service.TrutGameEngine;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -46,6 +47,9 @@ class GameViewBuilderTest {
 
     @Mock
     private TrutGameEngine engine;
+
+    @Mock
+    private PlayerConnectionPort connectionPort;
 
     @InjectMocks
     private GameViewBuilder viewBuilder;
@@ -159,6 +163,24 @@ class GameViewBuilderTest {
             .findFirst()
             .orElseThrow();
         then(self.cardCount()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("should include disconnected players from connection port")
+    void shouldIncludeDisconnectedPlayersFromPort() {
+        // Given
+        GameState state = createState(Map.of(
+            PLAYER_1_ID, Hand.of(ACE_HEARTS),
+            PLAYER_2_ID, Hand.empty()
+        ));
+        given(engine.availableActions(any(), any())).willReturn(List.of());
+        given(connectionPort.getDisconnectedPlayers("game-1")).willReturn(Set.of(PLAYER_2_ID.value()));
+
+        // When
+        GameView view = viewBuilder.buildView(state, PLAYER_1_ID);
+
+        // Then
+        then(view.disconnectedPlayers()).containsExactly(PLAYER_2_ID.value());
     }
 
     // --- helpers ---

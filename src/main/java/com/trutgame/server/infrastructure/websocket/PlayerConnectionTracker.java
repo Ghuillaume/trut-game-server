@@ -1,6 +1,7 @@
 package com.trutgame.server.infrastructure.websocket;
 
 import com.trutgame.server.application.port.out.GameViewPublisher;
+import com.trutgame.server.application.port.out.PlayerConnectionPort;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -16,7 +17,7 @@ import java.util.concurrent.TimeUnit;
  * Handles disconnect timers and reconnection.
  */
 @Component
-public class PlayerConnectionTracker {
+public class PlayerConnectionTracker implements PlayerConnectionPort {
 
     private static final long DISCONNECT_TIMEOUT_SECONDS = 60;
 
@@ -39,7 +40,6 @@ public class PlayerConnectionTracker {
         ScheduledFuture<?> timer = disconnectTimers.remove(timerKey);
         if (timer != null) {
             timer.cancel(false);
-            publisher.publishEvent(gameId, playerId + " s'est reconnecté");
         }
     }
 
@@ -47,14 +47,16 @@ public class PlayerConnectionTracker {
         connectedPlayers.computeIfAbsent(gameId, k -> ConcurrentHashMap.newKeySet()).remove(playerId);
         disconnectedPlayers.computeIfAbsent(gameId, k -> ConcurrentHashMap.newKeySet()).add(playerId);
 
-        publisher.publishEvent(gameId, playerId + " s'est déconnecté");
-
         String timerKey = gameId + ":" + playerId;
         ScheduledFuture<?> timer = scheduler.schedule(() -> {
             disconnectTimers.remove(timerKey);
             publisher.publishEvent(gameId, "Partie abandonnée — " + playerId + " ne s'est pas reconnecté");
         }, DISCONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         disconnectTimers.put(timerKey, timer);
+    }
+
+    public boolean wasDisconnected(String gameId, String playerId) {
+        return disconnectedPlayers.getOrDefault(gameId, Set.of()).contains(playerId);
     }
 
     public Set<String> getDisconnectedPlayers(String gameId) {

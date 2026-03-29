@@ -11,6 +11,7 @@ import com.trutgame.server.domain.model.Team;
 import com.trutgame.server.domain.model.TokenCount;
 import com.trutgame.server.domain.model.Trick;
 import com.trutgame.server.domain.model.TrickEntry;
+import com.trutgame.server.application.port.out.PlayerConnectionPort;
 import com.trutgame.server.domain.service.TrutGameEngine;
 
 import java.util.List;
@@ -20,9 +21,11 @@ import java.util.stream.Collectors;
 public class GameViewBuilder {
 
     private final TrutGameEngine engine;
+    private final PlayerConnectionPort connectionPort;
 
-    public GameViewBuilder(TrutGameEngine engine) {
+    public GameViewBuilder(TrutGameEngine engine, PlayerConnectionPort connectionPort) {
         this.engine = engine;
+        this.connectionPort = connectionPort;
     }
 
     public GameView buildView(GameState state, PlayerId playerId) {
@@ -111,7 +114,7 @@ public class GameViewBuilder {
             state.fortialActive(),
             state.winner() != null ? state.winner().name() : null,
             rematchVoteIds,
-            List.of(),
+            List.copyOf(connectionPort.getDisconnectedPlayers(state.gameId())),
             creatorId
         );
     }
