@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
 
 import static org.assertj.core.api.BDDAssertions.thenThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -65,6 +66,9 @@ class ApplyActionServiceTest {
 
     @Mock
     private AiPlayerStrategy aiStrategy;
+
+    @Mock
+    private ScheduledExecutorService scheduler;
 
     @InjectMocks
     private ApplyActionService service;

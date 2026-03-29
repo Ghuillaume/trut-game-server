@@ -14,6 +14,9 @@ import com.trutgame.server.domain.service.TrutGameEngine;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+
 @Configuration
 public class UseCaseConfig {
 
@@ -46,12 +49,22 @@ public class UseCaseConfig {
     }
 
     @Bean
+    public ScheduledExecutorService aiScheduler() {
+        return Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "ai-player-scheduler");
+            t.setDaemon(true);
+            return t;
+        });
+    }
+
+    @Bean
     public ApplyActionUseCase applyActionUseCase(GameSessionRepository repository,
                                                   GameViewPublisher publisher,
                                                   TrutGameEngine engine,
                                                   GameViewBuilder viewBuilder,
-                                                  AiPlayerStrategy aiStrategy) {
-        return new ApplyActionService(repository, publisher, engine, viewBuilder, aiStrategy);
+                                                  AiPlayerStrategy aiStrategy,
+                                                  ScheduledExecutorService aiScheduler) {
+        return new ApplyActionService(repository, publisher, engine, viewBuilder, aiStrategy, aiScheduler);
     }
 
     @Bean
