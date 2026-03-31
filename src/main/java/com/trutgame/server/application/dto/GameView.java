@@ -24,7 +24,7 @@ public record GameView(
 ) {
     public record PlayerView(String id, String pseudo, String team, int cardCount, boolean isAi) {}
     public record TrickEntryView(String playerId, String card) {}
-    public record CompletedTrickView(List<TrickEntryView> entries, String winnerTeam) {}
-    public record TrutChallengeView(String challengerId, String status, String challengeType) {}
+    public record CompletedTrickView(List<TrickEntryView> entries, String winnerTeam, String winnerId) {}
+    public record TrutChallengeView(String challengerId, String status, String challengeType, List<String> foldedPlayerIds, String calledPlayerId) {}
     public record ScoreView(int grands, int petits) {}
 }

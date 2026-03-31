@@ -16,6 +16,7 @@ import com.trutgame.server.domain.service.TrutGameEngine;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class GameViewBuilder {
@@ -58,22 +59,48 @@ public class GameViewBuilder {
                 List<GameView.TrickEntryView> entries = trick.entries().stream()
                     .map(e -> new GameView.TrickEntryView(e.playerId().value(), e.card().id()))
                     .toList();
-                String winnerTeam = trick.winner(state.players())
-                    .map(Team::name)
+                Optional<Team> winnerOpt = trick.winner(state.players());
+                String winnerTeam = winnerOpt.map(Team::name).orElse(null);
+                String winnerId = winnerOpt.map(team -> trick.entries().stream()
+                        .filter(e -> state.players().stream()
+                            .anyMatch(p -> p.id().equals(e.playerId()) && p.team() == team))
+                        .min(java.util.Comparator.comparingInt(e -> e.card().value().rank()))
+                        .map(e -> e.playerId().value())
+                        .orElse(null))
                     .orElse(null);
-                return new GameView.CompletedTrickView(entries, winnerTeam);
+                return new GameView.CompletedTrickView(entries, winnerTeam, winnerId);
             })
             .toList();
 
         GameView.TrutChallengeView challengeView = null;
         if (state.trutChallenge() != null) {
-            String status = state.trutChallenge().resolved()
-                ? (state.trutChallenge().accepted() ? "ACCEPTED" : "DECLINED")
+            var challenge = state.trutChallenge();
+            String status = challenge.resolved()
+                ? (challenge.accepted() ? "ACCEPTED" : "DECLINED")
                 : "PENDING";
+
+            List<String> foldedPlayerIds;
+            String calledPlayerId;
+
+            if (challenge.accepted()) {
+                // Last responder called, others folded
+                var responded = challenge.respondedPlayers();
+                calledPlayerId = responded.isEmpty() ? null : responded.get(responded.size() - 1).value();
+                foldedPlayerIds = responded.subList(0, Math.max(0, responded.size() - 1)).stream()
+                    .map(PlayerId::value).toList();
+            } else {
+                // All responded are folders
+                foldedPlayerIds = challenge.respondedPlayers().stream()
+                    .map(PlayerId::value).toList();
+                calledPlayerId = null;
+            }
+
             challengeView = new GameView.TrutChallengeView(
-                state.trutChallenge().challengerId().value(),
+                challenge.challengerId().value(),
                 status,
-                state.trutChallenge().challengeType().name());
+                challenge.challengeType().name(),
+                foldedPlayerIds,
+                calledPlayerId);
         }
 
         Map<String, GameView.ScoreView> scoreView = state.score().entrySet().stream()

@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 public class ApplyActionService implements ApplyActionUseCase {
 
     private static final Logger log = LoggerFactory.getLogger(ApplyActionService.class);
-    private static final long AI_DELAY_MS = 1000;
+    private static final long AI_DELAY_MS = 2000;
 
     private final GameSessionRepository repository;
     private final GameViewPublisher publisher;
