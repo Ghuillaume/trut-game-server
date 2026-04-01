@@ -216,12 +216,22 @@ public class ApplyActionService implements ApplyActionUseCase {
             pseudo = action.playerId().value();
         }
         return switch (action) {
-            case PlayCardAction a -> pseudo + " a joué " + a.card().id();
+            case PlayCardAction a -> pseudo + " a joué le " + cardLabel(a.card().id());
             case TrutAction ignored -> pseudo + " a truté !";
             case CallAction ignored -> pseudo + " va voir";
             case FoldAction ignored -> pseudo + " se couche";
             case BrellanAction ignored -> pseudo + " annonce Brelan !";
             case DeuxPareillesAction ignored -> pseudo + " annonce Deux pareilles une fausse !";
         };
+    }
+
+    private String cardLabel(String cardId) {
+        Map<String, String> values = Map.of(
+            "SEVEN", "7", "EIGHT", "8", "ACE", "As", "KING", "Roi",
+            "QUEEN", "Dame", "JACK", "Valet", "TEN", "10", "NINE", "9");
+        Map<String, String> suits = Map.of(
+            "HEARTS", "♥", "DIAMONDS", "♦", "CLUBS", "♣", "SPADES", "♠");
+        String[] parts = cardId.split("_");
+        return values.getOrDefault(parts[0], parts[0]) + " de " + suits.getOrDefault(parts[1], parts[1]);
     }
 }

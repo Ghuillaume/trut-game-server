@@ -7,6 +7,7 @@ import com.trutgame.server.application.port.in.GetGameViewUseCase;
 import com.trutgame.server.application.port.in.JoinGameUseCase;
 import com.trutgame.server.application.port.in.StartGameUseCase;
 import com.trutgame.server.application.port.in.SwapTeamUseCase;
+import com.trutgame.server.application.port.out.GameSessionRepository;
 import com.trutgame.server.domain.model.PlayerId;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -27,19 +28,22 @@ public class GameController {
     private final AddAiPlayerUseCase addAiPlayerUseCase;
     private final SwapTeamUseCase swapTeamUseCase;
     private final StartGameUseCase startGameUseCase;
+    private final GameSessionRepository repository;
 
     public GameController(CreateGameUseCase createGameUseCase,
                          JoinGameUseCase joinGameUseCase,
                          GetGameViewUseCase getGameViewUseCase,
                          AddAiPlayerUseCase addAiPlayerUseCase,
                          SwapTeamUseCase swapTeamUseCase,
-                         StartGameUseCase startGameUseCase) {
+                         StartGameUseCase startGameUseCase,
+                         GameSessionRepository repository) {
         this.createGameUseCase = createGameUseCase;
         this.joinGameUseCase = joinGameUseCase;
         this.getGameViewUseCase = getGameViewUseCase;
         this.addAiPlayerUseCase = addAiPlayerUseCase;
         this.swapTeamUseCase = swapTeamUseCase;
         this.startGameUseCase = startGameUseCase;
+        this.repository = repository;
     }
 
     @PostMapping
@@ -91,6 +95,12 @@ public class GameController {
         startGameUseCase.startGame(
             new StartGameCommand(gameId, request.requestingPlayerId()));
         return ResponseEntity.ok(Map.of("status", "Game started"));
+    }
+
+    @DeleteMapping("/{gameId}")
+    public ResponseEntity<Map<String, String>> deleteGame(@PathVariable String gameId) {
+        repository.delete(gameId);
+        return ResponseEntity.ok(Map.of("status", "deleted", "gameId", gameId));
     }
 
     public record CreateGameRequest(
