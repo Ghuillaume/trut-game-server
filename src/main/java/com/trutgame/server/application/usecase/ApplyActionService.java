@@ -21,7 +21,6 @@ import com.trutgame.server.domain.model.Team;
 import com.trutgame.server.domain.model.TokenCount;
 import com.trutgame.server.domain.model.Trick;
 import com.trutgame.server.domain.phase.GamePhase;
-import com.trutgame.server.domain.service.AiPlayerStrategy;
 import com.trutgame.server.domain.service.TrutGameEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,30 +31,25 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class ApplyActionService implements ApplyActionUseCase {
 
     private static final Logger log = LoggerFactory.getLogger(ApplyActionService.class);
-    private static final long AI_DELAY_MS = 2000;
 
     private final GameSessionRepository repository;
     private final GameViewPublisher publisher;
     private final TrutGameEngine engine;
     private final GameViewBuilder viewBuilder;
-    private final AiPlayerStrategy aiStrategy;
-    private final ScheduledExecutorService scheduler;
+    private final AiTurnScheduler aiTurnScheduler;
 
     public ApplyActionService(GameSessionRepository repository, GameViewPublisher publisher,
                               TrutGameEngine engine, GameViewBuilder viewBuilder,
-                              AiPlayerStrategy aiStrategy, ScheduledExecutorService scheduler) {
+                              AiTurnScheduler aiTurnScheduler) {
         this.repository = repository;
         this.publisher = publisher;
         this.engine = engine;
         this.viewBuilder = viewBuilder;
-        this.aiStrategy = aiStrategy;
-        this.scheduler = scheduler;
+        this.aiTurnScheduler = aiTurnScheduler;
     }
 
     @Override
@@ -88,7 +82,7 @@ public class ApplyActionService implements ApplyActionUseCase {
         publisher.publishEvent(newState.gameId(), event);
 
         // Schedule AI turns asynchronously with delay
-        scheduleNextAiTurn(newState.gameId());
+        aiTurnScheduler.scheduleNextAiTurn(newState.gameId());
     }
 
     private GameState handleRematch(GameState state, PlayerId playerId) {
@@ -139,54 +133,6 @@ public class ApplyActionService implements ApplyActionUseCase {
         );
 
         return engine.startNewRound(freshState);
-    }
-
-    /**
-     * Schedules the next AI turn with a delay to simulate thinking time.
-     * Re-reads state from repository to handle concurrent modifications.
-     */
-    private void scheduleNextAiTurn(String gameId) {
-        log.info("🤖 Scheduling AI turn for game {} in {}ms", gameId, AI_DELAY_MS);
-        scheduler.schedule(() -> {
-            try {
-                GameState state = repository.findById(gameId).orElse(null);
-                if (state == null || !isAiTurn(state)) {
-                    log.info("🤖 AI turn skipped for game {} (not AI turn or game not found)", gameId);
-                    return;
-                }
-
-                PlayerId aiPlayerId = state.currentPlayerId();
-                log.info("🤖 AI {} playing in game {}", aiPlayerId.value(), gameId);
-                GameAction aiAction = aiStrategy.chooseAction(state, aiPlayerId);
-                GameState newState = engine.apply(state, aiAction);
-                repository.save(newState);
-
-                String aiEvent = describeAction(aiAction, state);
-                publishViewsToAll(newState);
-                publisher.publishEvent(newState.gameId(), aiEvent);
-
-                // Chain: schedule next AI turn if needed
-                scheduleNextAiTurn(gameId);
-            } catch (Exception e) {
-                log.error("🤖 Error during AI turn for game {}", gameId, e);
-            }
-        }, AI_DELAY_MS, TimeUnit.MILLISECONDS);
-    }
-
-    private boolean isAiTurn(GameState state) {
-        if (state.phase() == GamePhase.GAME_OVER
-            || state.phase() == GamePhase.WAITING_FOR_PLAYERS
-            || state.phase() == GamePhase.DEALING
-            || state.phase() == GamePhase.END_OF_ROUND) {
-            return false;
-        }
-        if (state.currentPlayerId() == null) return false;
-        return state.players().stream()
-            .anyMatch(p -> p.id().equals(state.currentPlayerId()) && p.isAi());
-    }
-
-    private boolean hasAnyAi(GameState state) {
-        return state.players().stream().anyMatch(Player::isAi);
     }
 
     private void publishViewsToAll(GameState state) {

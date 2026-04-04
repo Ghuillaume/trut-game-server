@@ -61,13 +61,22 @@ public class UseCaseConfig {
     }
 
     @Bean
+    public AiTurnScheduler aiTurnScheduler(GameSessionRepository repository,
+                                           GameViewPublisher publisher,
+                                           TrutGameEngine engine,
+                                           GameViewBuilder viewBuilder,
+                                           AiPlayerStrategy aiStrategy,
+                                           ScheduledExecutorService aiScheduler) {
+        return new AiTurnScheduler(repository, publisher, engine, viewBuilder, aiStrategy, aiScheduler);
+    }
+
+    @Bean
     public ApplyActionUseCase applyActionUseCase(GameSessionRepository repository,
                                                   GameViewPublisher publisher,
                                                   TrutGameEngine engine,
                                                   GameViewBuilder viewBuilder,
-                                                  AiPlayerStrategy aiStrategy,
-                                                  ScheduledExecutorService aiScheduler) {
-        return new ApplyActionService(repository, publisher, engine, viewBuilder, aiStrategy, aiScheduler);
+                                                  AiTurnScheduler aiTurnScheduler) {
+        return new ApplyActionService(repository, publisher, engine, viewBuilder, aiTurnScheduler);
     }
 
     @Bean
@@ -95,8 +104,9 @@ public class UseCaseConfig {
     public StartGameUseCase startGameUseCase(GameSessionRepository repository,
                                              GameViewPublisher publisher,
                                              TrutGameEngine engine,
-                                             GameViewBuilder viewBuilder) {
-        return new StartGameService(repository, publisher, engine, viewBuilder);
+                                             GameViewBuilder viewBuilder,
+                                             AiTurnScheduler aiTurnScheduler) {
+        return new StartGameService(repository, publisher, engine, viewBuilder, aiTurnScheduler);
     }
 
     @Bean

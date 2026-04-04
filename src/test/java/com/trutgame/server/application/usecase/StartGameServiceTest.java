@@ -52,6 +52,9 @@ class StartGameServiceTest {
     @Mock
     private GameViewBuilder viewBuilder;
 
+    @Mock
+    private AiTurnScheduler aiTurnScheduler;
+
     @InjectMocks
     private StartGameService service;
 
@@ -123,6 +126,23 @@ class StartGameServiceTest {
         thenThrownBy(() -> service.startGame(new StartGameCommand(GAME_ID, "p1")))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("already started");
+    }
+
+    @Test
+    @DisplayName("should schedule AI turn when game starts with an AI as first player")
+    void shouldScheduleAiTurnOnGameStart() {
+        // Given
+        GameState state = createFullWaitingState();
+        given(repository.findById(GAME_ID)).willReturn(Optional.of(state));
+        given(engine.startNewRound(any(GameState.class))).willAnswer(inv -> inv.getArgument(0));
+        given(viewBuilder.buildView(any(GameState.class), any(PlayerId.class)))
+            .willReturn(dummyView());
+
+        // When
+        service.startGame(new StartGameCommand(GAME_ID, "p1"));
+
+        // Then
+        verify(aiTurnScheduler).scheduleNextAiTurn(GAME_ID);
     }
 
     @Test

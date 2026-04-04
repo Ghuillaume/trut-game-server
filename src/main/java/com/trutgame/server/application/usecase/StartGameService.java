@@ -16,13 +16,16 @@ public class StartGameService implements StartGameUseCase {
     private final GameViewPublisher publisher;
     private final TrutGameEngine engine;
     private final GameViewBuilder viewBuilder;
+    private final AiTurnScheduler aiTurnScheduler;
 
     public StartGameService(GameSessionRepository repository, GameViewPublisher publisher,
-                            TrutGameEngine engine, GameViewBuilder viewBuilder) {
+                            TrutGameEngine engine, GameViewBuilder viewBuilder,
+                            AiTurnScheduler aiTurnScheduler) {
         this.repository = repository;
         this.publisher = publisher;
         this.engine = engine;
         this.viewBuilder = viewBuilder;
+        this.aiTurnScheduler = aiTurnScheduler;
     }
 
     @Override
@@ -54,5 +57,9 @@ public class StartGameService implements StartGameUseCase {
             GameView view = viewBuilder.buildView(startedState, player.id());
             publisher.publishGameView(startedState.gameId(), player.id(), view);
         }
+
+        // Schedule first AI turn if the starting player is an AI
+        aiTurnScheduler.scheduleNextAiTurn(startedState.gameId());
     }
 }
+

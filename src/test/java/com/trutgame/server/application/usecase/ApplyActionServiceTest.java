@@ -17,7 +17,6 @@ import com.trutgame.server.domain.model.Team;
 import com.trutgame.server.domain.model.TokenCount;
 import com.trutgame.server.domain.model.Trick;
 import com.trutgame.server.domain.phase.GamePhase;
-import com.trutgame.server.domain.service.AiPlayerStrategy;
 import com.trutgame.server.domain.service.TrutGameEngine;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ScheduledExecutorService;
 
 import static org.assertj.core.api.BDDAssertions.thenThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -65,10 +63,7 @@ class ApplyActionServiceTest {
     private GameViewBuilder viewBuilder;
 
     @Mock
-    private AiPlayerStrategy aiStrategy;
-
-    @Mock
-    private ScheduledExecutorService scheduler;
+    private AiTurnScheduler aiTurnScheduler;
 
     @InjectMocks
     private ApplyActionService service;
