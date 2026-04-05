@@ -447,9 +447,9 @@ class GameWebSocketIntegrationTest {
         then(phase).isIn("END_OF_ROUND", "GAME_OVER");
 
         if ("END_OF_ROUND".equals(phase)) {
-            // Verify completedTricks has 3 entries
+            // Verify completedTricks has 2 or 3 entries (round may end early when decided after 2 tricks)
             List<Map<String, Object>> completed = (List<Map<String, Object>>) endView.get("completedTricks");
-            then(completed).as("completedTricks should have 3 entries at end of round").hasSize(3);
+            then(completed).as("completedTricks should have 2 or 3 entries at end of round").hasSizeBetween(2, 3);
 
             // Now send START_NEW_ROUND
             session.send("/app/games/" + gameId + "/action",

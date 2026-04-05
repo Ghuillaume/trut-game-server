@@ -273,6 +273,16 @@ public class TrutGameEngine {
                             .build());
         }
 
+        // Round decided after 2 tricks → skip the 3rd trick
+        if (newCompleted.size() == TRICKS_PER_ROUND - 1
+                && isRoundDecidedAfterTwoTricks(newCompleted, state.players())) {
+            return resolveEndOfRound(
+                    copy(state)
+                            .completedTricks(newCompleted)
+                            .currentTrick(Trick.empty())
+                            .build());
+        }
+
         // Determine next trick leader
         Optional<Team> winner = completedTrick.winner(state.players());
         PlayerId nextLeader = winner.isPresent()
@@ -284,6 +294,24 @@ public class TrutGameEngine {
                 .currentTrick(Trick.empty())
                 .currentPlayerId(nextLeader)
                 .build();
+    }
+
+    /**
+     * Returns true when the round winner is already determined after exactly 2 tricks,
+     * making the 3rd trick unnecessary.
+     * <ul>
+     *   <li>Both tricks won by the same team (2-0).</li>
+     *   <li>First trick was pourri, second trick has a winner (winner accumulates 2 tricks).</li>
+     * </ul>
+     * NOT decided: 1-1 split, first-won + second-pourri, or both pourri.
+     */
+    private boolean isRoundDecidedAfterTwoTricks(List<Trick> tricks, List<Player> players) {
+        Optional<Team> first = tricks.get(0).winner(players);
+        Optional<Team> second = tricks.get(1).winner(players);
+        // Both won by same team
+        if (first.isPresent() && second.isPresent() && first.get() == second.get()) return true;
+        // First was pourri, second has a winner → winner accumulates 2 tricks (including the pourri)
+        return first.isEmpty() && second.isPresent();
     }
 
     // ── End of Round ────────────────────────────────────────────────────────

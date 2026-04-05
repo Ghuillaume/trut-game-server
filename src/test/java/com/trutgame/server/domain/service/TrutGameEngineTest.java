@@ -238,8 +238,114 @@ class TrutGameEngineTest {
     }
 
     @Nested
+    @DisplayName("Early round termination")
+    class EarlyRoundTermination {
+
+        private Trick trickWonByA() {
+            // TEAM_A wins: SEVEN_H (rank 1) beats KING_H (rank 4)
+            return Trick.empty()
+                    .addEntry(new TrickEntry(P1, SEVEN_H))
+                    .addEntry(new TrickEntry(P2, KING_H))
+                    .addEntry(new TrickEntry(P3, ACE_H))
+                    .addEntry(new TrickEntry(P4, KING_D));
+        }
+
+        private Trick pourriTrick() {
+            // Pourri: both teams play SEVEN (rank 1)
+            return Trick.empty()
+                    .addEntry(new TrickEntry(P1, SEVEN_H))
+                    .addEntry(new TrickEntry(P2, SEVEN_D))
+                    .addEntry(new TrickEntry(P3, ACE_H))
+                    .addEntry(new TrickEntry(P4, QUEEN_D));
+        }
+
+        /** Build a state with one already-completed trick; P1 leads trick 2. */
+        private GameState stateAfterOneTrick(Trick completedTrick, Map<PlayerId, Hand> hands) {
+            return new GameState(GAME_ID, GamePhase.PLAYING_TRICK, ALL_PLAYERS,
+                    P3, P1, hands, List.of(), List.of(completedTrick), Trick.empty(), null,
+                    Map.of(Team.TEAM_A, TokenCount.zero(), Team.TEAM_B, TokenCount.zero()),
+                    1, false, null, Set.of());
+        }
+
+        /** Play all 4 cards of trick 2, P1 leading. */
+        private GameState playSecondTrick(GameState state,
+                                          Card p1Card, Card p2Card, Card p3Card, Card p4Card) {
+            state = engine.apply(state, new PlayCardAction(P1, p1Card));
+            state = engine.apply(state, new PlayCardAction(P2, p2Card));
+            state = engine.apply(state, new PlayCardAction(P3, p3Card));
+            return engine.apply(state, new PlayCardAction(P4, p4Card));
+        }
+
+        @Test
+        @DisplayName("should end round after trick 2 when same team wins both tricks")
+        void shouldEndRoundEarlyWhenSameTeamWinsBothTricks() {
+            // TEAM_A wins trick 1; trick 2: TEAM_A wins again (EIGHT vs NINE)
+            Map<PlayerId, Hand> hands = new HashMap<>(Map.of(
+                    P1, Hand.of(EIGHT_H), P2, Hand.of(NINE_H),
+                    P3, Hand.of(EIGHT_D), P4, Hand.of(NINE_D)));
+
+            GameState result = playSecondTrick(
+                    stateAfterOneTrick(trickWonByA(), hands),
+                    EIGHT_H, NINE_H, EIGHT_D, NINE_D);
+
+            then(result.phase()).isEqualTo(GamePhase.END_OF_ROUND);
+            then(result.completedTricks()).hasSize(2);
+        }
+
+        @Test
+        @DisplayName("should end round after trick 2 when first trick was pourri and second has a winner")
+        void shouldEndRoundEarlyWhenFirstPourriSecondHasWinner() {
+            // Trick 1 is pourri → P1 leads trick 2
+            // Trick 2: TEAM_B wins (EIGHT vs NINE)
+            Map<PlayerId, Hand> hands = new HashMap<>(Map.of(
+                    P1, Hand.of(NINE_C), P2, Hand.of(EIGHT_H),
+                    P3, Hand.of(NINE_D), P4, Hand.of(EIGHT_D)));
+
+            GameState result = playSecondTrick(
+                    stateAfterOneTrick(pourriTrick(), hands),
+                    NINE_C, EIGHT_H, NINE_D, EIGHT_D);
+
+            then(result.phase()).isEqualTo(GamePhase.END_OF_ROUND);
+            then(result.completedTricks()).hasSize(2);
+        }
+
+        @Test
+        @DisplayName("should continue to trick 3 when score is 1-1 after trick 2")
+        void shouldContinueWhenSplitAfterTwoTricks() {
+            // TEAM_A wins trick 1; trick 2 TEAM_B wins (EIGHT vs NINE) → 1-1
+            Map<PlayerId, Hand> hands = new HashMap<>(Map.of(
+                    P1, Hand.of(NINE_H), P2, Hand.of(EIGHT_H),
+                    P3, Hand.of(NINE_D), P4, Hand.of(EIGHT_D)));
+
+            GameState result = playSecondTrick(
+                    stateAfterOneTrick(trickWonByA(), hands),
+                    NINE_H, EIGHT_H, NINE_D, EIGHT_D);
+
+            then(result.phase()).isEqualTo(GamePhase.PLAYING_TRICK);
+            then(result.completedTricks()).hasSize(2);
+        }
+
+        @Test
+        @DisplayName("should continue to trick 3 when trick 2 is pourri after a won trick 1")
+        void shouldContinueWhenSecondTrickIsPourri() {
+            // TEAM_A wins trick 1; trick 2 is pourri (EIGHT vs EIGHT) → 3rd trick needed
+            Map<PlayerId, Hand> hands = new HashMap<>(Map.of(
+                    P1, Hand.of(EIGHT_H), P2, Hand.of(EIGHT_D),
+                    P3, Hand.of(NINE_D), P4, Hand.of(NINE_C)));
+
+            GameState result = playSecondTrick(
+                    stateAfterOneTrick(trickWonByA(), hands),
+                    EIGHT_H, EIGHT_D, NINE_D, NINE_C);
+
+            then(result.phase()).isEqualTo(GamePhase.PLAYING_TRICK);
+            then(result.completedTricks()).hasSize(2);
+        }
+    }
+
+    @Nested
     @DisplayName("Trut challenge")
     class TrutChallengeTests {
+
         @Test @DisplayName("should enter trut challenge phase")
         void shouldEnterTrutChallengePhase() {
             GameState after = engine.apply(createPlayingState(defaultHands()), new TrutAction(P2));
