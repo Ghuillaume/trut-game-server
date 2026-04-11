@@ -391,6 +391,23 @@ class TrutGameEngineTest {
             then(afterCall.phase()).isEqualTo(GamePhase.PLAYING_TRICK);
             then(afterCall.trutChallenge().accepted()).isTrue();
         }
+
+        @Test @DisplayName("should assign first responder to player left of challenger, not left of dealer")
+        void shouldAssignFirstResponderToPlayerLeftOfChallenger() {
+            // Seating: P1(A)-P2(B)-P3(A)-P4(B). Dealer=P1.
+            // When P4 (TEAM_B) truts: left of P4 = P1 (TEAM_A). P1 should respond first.
+            // Old behaviour (left of dealer P1 = P2): P3 would have been first.
+            GameState withTrut = engine.apply(createPlayingState(defaultHands()), new TrutAction(P4));
+            then(withTrut.currentPlayerId()).isEqualTo(P1);
+        }
+
+        @Test @DisplayName("second responder should follow clockwise from challenger after first responds")
+        void shouldAdvanceClockwiseForSecondResponder() {
+            // P4 (TEAM_B) truts. Left of P4 = P1 (TEAM_A). P1 folds → next TEAM_A = P3.
+            GameState withTrut = engine.apply(createPlayingState(defaultHands()), new TrutAction(P4));
+            GameState afterP1Fold = engine.apply(withTrut, new FoldAction(P1));
+            then(afterP1Fold.currentPlayerId()).isEqualTo(P3);
+        }
     }
 
     @Nested

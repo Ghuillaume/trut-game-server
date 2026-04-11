@@ -423,8 +423,9 @@ public class TrutGameEngine {
 
         Team challengerTeam = state.getTeam(action.playerId());
         TrutChallenge challenge = TrutChallenge.create(action.playerId(), challengerTeam, challengeType);
+        // First responder = first opponent encountered clockwise from the challenger's left seat
         PlayerId firstResponder = findNextResponder(state.players(),
-                state.currentDealerId(), challenge);
+                action.playerId(), challenge);
 
         return copy(state)
                 .phase(GamePhase.TRUT_CHALLENGE)
@@ -522,9 +523,9 @@ public class TrutGameEngine {
             return applyFoldScoring(state, resolved);
         }
 
-        // Need next responder
+        // Need next responder — walk clockwise from challenger's left
         PlayerId nextResponder = findNextResponder(state.players(),
-                state.currentDealerId(), updated);
+                state.trutChallenge().challengerId(), updated);
         return copy(state)
                 .trutChallenge(updated)
                 .currentPlayerId(nextResponder)
@@ -730,14 +731,14 @@ public class TrutGameEngine {
 
     /**
      * Find the next opponent who has not yet responded to the trut challenge,
-     * walking clockwise from the seat left of the dealer.
+     * walking clockwise from the seat left of the challenger.
      */
     private PlayerId findNextResponder(List<Player> players,
-                                       PlayerId dealerId,
+                                       PlayerId challengerId,
                                        TrutChallenge challenge) {
         Team opposingTeam = challenge.challengerTeam().opponent();
-        PlayerId leftOfDealer = nextPlayerFrom(players, dealerId);
-        List<PlayerId> clockwise = buildClockwiseOrder(players, leftOfDealer);
+        PlayerId leftOfChallenger = nextPlayerFrom(players, challengerId);
+        List<PlayerId> clockwise = buildClockwiseOrder(players, leftOfChallenger);
         for (PlayerId pid : clockwise) {
             Player p = findPlayer(players, pid);
             if (p.team() == opposingTeam
